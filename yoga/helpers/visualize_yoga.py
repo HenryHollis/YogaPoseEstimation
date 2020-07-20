@@ -9,13 +9,19 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import load_model
 import numpy as np
+import os
+
 np.seterr(divide='ignore', invalid='ignore')
 
-import os
-model_path = os.getcwd() + '\\helpers\\model'
-model = load_model(model_path)
+model_path = os.getcwd() + '\\helpers\\model' # get path of saved Keras Model
+model = load_model(model_path)                # load model
 
 def predict_pose(angles):
+    """
+    Takes a list of list of angles made by the joints of the body in a particular frame.
+    Runs angles through model to predict pose
+    returns string: confidence of prediction and name of pose
+    """
     POSE_THRESHOLD = 0.8
 
     angles = np.array([(angles)])
@@ -75,6 +81,8 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
     -------
     numpy.ndarray
         The image with estimated pose.
+    pose
+        string of with pose name and confidence for displaying
 
     """
 
@@ -90,30 +98,37 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
         scores = scores.asnumpy()
     if isinstance(confidence, mx.nd.NDArray):
         confidence = confidence.asnumpy()
-    joint_pairs_with_eyes = [[0, 1], [1, 3], [0, 2], [2, 4],
+    joint_pairs_with_eyes = [[0, 1], [1, 3], [0, 2], [2, 4],  # use this dictionary if you want to track face features
                    [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
                    [5, 11], [6, 12], [11, 12],
                    [11, 13], [12, 14], [13, 15], [14, 16]]
-    joint_pairs = [[5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+    joint_pairs = [[5, 6], [5, 7], [7, 9], [6, 8], [8, 10],  # use this dictionary to not include face features
                    [5, 11], [6, 12], [11, 12],
                    [11, 13], [12, 14], [13, 15], [14, 16]]
     pose = None
     angles = []
     joint_visible = confidence[:, :, 0] > keypoint_thresh   # an array of boolean values, true if point is above confidence thresh
 
-    coords *= scale
-    for i in range(coords.shape[0]):            # In this case, i is always one, only processing a single frame at a time
+    coords *= scale                          # coords were scaled so we have to rescale here
+    for i in range(coords.shape[0]):         # In this case, i is always one, only processing a single frame at a time
         pts = coords[i]
         GREEN = (0,255,0)
         RED = (255, 0, 0)
         for jp in joint_pairs:
-            if joint_visible[i, jp[0]] and joint_visible[i, jp[1]]:                 #if both points above conidence threshold
+            if joint_visible[i, jp[0]] and joint_visible[i, jp[1]]:    # if both points above confidence threshold, display a line between them
                 pt1 = (int(pts[jp, 0][0]), int(pts[jp, 1][0]))
                 pt2 = (int(pts[jp, 0][1]), int(pts[jp, 1][1]))
                 cv2.line(img, pt1, pt2, GREEN, 3)
         
 
     def findAngle(A, cent, B, pt1, pt2, pt3):
+        """ nested function for determining the angle (in radians) between joints
+        input:
+            A, cent, B : coords of the three joints
+            pt1, pt2, pt3:  the label of the three joints
+        output: 
+            angle in radians
+        """
         if joint_visible[i, pt1] and joint_visible[i, pt2] and joint_visible[i, pt3]:
             a1, a2 = A
             b1, b2 = B
