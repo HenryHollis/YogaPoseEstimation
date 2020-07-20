@@ -8,3 +8,7 @@ Accepts two command line args:
 -v path_to_video         (use this flag to judge form from a video file instead of webcam).
    
 -o path_to_outfile_name  (use this flag to specify where to save outfile).
+
+Requires "imutils" package: pip install imutils
+
+When running script, press "q" to exit cleanly
