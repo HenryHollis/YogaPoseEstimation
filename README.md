@@ -1,4 +1,4 @@
-# YogaPoseEstimation
+# Yoga Pose Estimator
 Using Pose Estimation to Judge Yoga Form from your webcam in real time
 
 Uses Pose Estimation and ANN classifier to label and judge your yoga poses. For more detail and retionale, view my writeup.
