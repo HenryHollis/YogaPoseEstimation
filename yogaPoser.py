@@ -43,6 +43,7 @@ if args['vid'] is not None:         # If getting frames from video
     print('[INFO] using video file...')
     vid_path = os.getcwd() + args['vid'][1:]
     vs = cv2.VideoCapture(vid_path)
+    vid_writer = cv2.VideoWriter(args['outfile'],cv2.VideoWriter_fourcc(*'MJPG'), 10, ( 500, 280), True)  # For outfile writing
     
 else:                              # If getting frames from webcam (default)
     print('[INFO] using camera...')
@@ -53,7 +54,6 @@ else:                              # If getting frames from webcam (default)
 #if using_vid_file:
 #    frame = frame[1]
 #(H, W) = frame.shape[:2]
-vid_writer = cv2.VideoWriter(args['outfile'],cv2.VideoWriter_fourcc(*'MJPG'), 29, ( 500, 280), True)  # For outfile writing
 
 def main():
     start = time.time()
@@ -66,10 +66,13 @@ def main():
     while True:    # While there is video frames to process...
 
         frame = vs.read()
+                
         if using_vid_file:
-            frame = frame[1]
+            exists, frame = (frame) #with vid file, frame is a tuple. First value is boolean second is array of pixels
+            if not exists: 
+                break          #exit when there are no incoming frames
         try:
-            frame = np.fliplr(frame)   # I want to display the mirror image if using webcam, personal choice
+            frame = np.fliplr(frame)   # I want to display the mirror image of input
         except ValueError:
             print('[ERROR] video file not found, make sure to include path and extension i.e. \'./vid.mp4\'')
             break
@@ -105,12 +108,13 @@ def main():
         else:
             skip_frame = False
         img = imutils.resize(img, height = 280, width = 500)    # blowup image for displaying
-        vid_writer.write(img)
+        
         if pose:
             cv2.putText(img, '{}'.format(pose), (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         else:
             cv2.putText(img, 'No Pose Detected', (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-
+        if using_vid_file:
+            vid_writer.write(img)
         cv2.imshow('Webcam', img)
         key = cv2.waitKey(1) & 0xFF
 
@@ -120,7 +124,8 @@ def main():
     cv2.destroyAllWindows()
     if not using_vid_file:
         vs.stop()
-    vid_writer.release()
+    if using_vid_file:
+        vid_writer.release()
     stop = time.time()
     #outfile.close()
     print("fps: {}".format(count/(stop-start)))
